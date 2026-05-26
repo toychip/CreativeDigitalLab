@@ -12,6 +12,8 @@ public sealed interface ChatEvent
 
     String sessionId();
 
+    String clientEventId();
+
     long seq();
 
     Instant createdAt();
