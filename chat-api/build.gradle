@@ -1,0 +1,18 @@
+plugins {
+    id 'chat-convention'
+}
+
+dependencies {
+    implementation project(':chat-application')
+    implementation project(':chat-domain')
+
+    implementation libs.bundles.api
+}
+
+tasks.named('bootJar') {
+    enabled = true
+}
+
+tasks.named('jar') {
+    enabled = false
+}
