@@ -1,0 +1,11 @@
+plugins {
+    id 'chat-convention'
+}
+
+dependencies {
+    implementation project(':chat-domain')
+
+    implementation libs.bundles.application
+
+    runtimeOnly libs.mysql
+}
