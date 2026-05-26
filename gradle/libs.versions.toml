@@ -3,6 +3,7 @@ javaVersion = "21"
 springBoot = "3.5.0"
 springDependencyManagement = "1.1.7"
 lombok = "1.18.36"
+javaUuidGenerator = "5.1.0"
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
@@ -27,6 +28,9 @@ mysql = { group = "com.mysql", name = "mysql-connector-j" }
 
 # Jackson (도메인 모듈에서 record + JSON annotation 만 사용)
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations" }
+
+# UUID v7 생성기 (Java native 미지원이라 라이브러리 사용)
+java-uuid-generator = { group = "com.fasterxml.uuid", name = "java-uuid-generator", version.ref = "javaUuidGenerator" }
 
 # Lombok
 lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }
