@@ -7,6 +7,11 @@ dependencies {
     implementation project(':chat-domain')
 
     implementation libs.bundles.api
+
+    compileOnly libs.lombok
+    annotationProcessor libs.lombok
+    testCompileOnly libs.lombok
+    testAnnotationProcessor libs.lombok
 }
 
 tasks.named('bootJar') {
