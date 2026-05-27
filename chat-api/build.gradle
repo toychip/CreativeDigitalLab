@@ -8,6 +8,7 @@ dependencies {
     implementation project(':chat-domain')
 
     implementation libs.bundles.api
+    implementation libs.spring.boot.starter.jpa
 
     compileOnly libs.lombok
     annotationProcessor libs.lombok

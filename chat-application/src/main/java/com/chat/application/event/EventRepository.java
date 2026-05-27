@@ -37,6 +37,16 @@ public interface EventRepository extends JpaRepository<EventEntity, String> {
             @Param("at") Instant at);
 
     /**
+     * 타임라인 전체 조회: at 파라미터 없이 세션의 모든 이벤트 seq 순 반환
+     */
+    @Query("""
+        SELECT e FROM EventEntity e
+        WHERE e.sessionId = :sessionId
+        ORDER BY e.seq
+        """)
+    List<EventEntity> findAllBySessionId(@Param("sessionId") String sessionId);
+
+    /**
      * SequenceGenerator 의 폴백 초기화용
      * Redis 카운터 유실 시 DB 의 가장 큰 seq 를 조회해서 그 위부터 다시 발급한다.
      * 이벤트가 없는 세션은 Optional.empty() — 호출부에서 0L 로 대체
