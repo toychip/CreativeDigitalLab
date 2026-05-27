@@ -107,7 +107,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private void subscribeActiveSessions(String userId) {
         try {
-            // TODO SessionMember 프로젝션 도입 시 실제 조회로 교체. 현재는 목 데이터.
+            // TODO SessionMember 프로젝션 도입 시 실제 조회로 교체. 현재는 목 데이터
             List<String> activeSessionIds = List.of("1234");
             activeSessionIds.forEach(sessionId -> registry.joinSession(userId, sessionId));
             log.info("Loaded {} active sessions for userId={}", activeSessionIds.size(), userId);

@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class WsConnectionRegistry {
 
-    // Redis Set 키 prefix. Set 단위 = serverId 1개, 원소 = 이 서버가 구독 중인 sessionId 들.
+    // Redis Set 키 prefix. Set 단위 = serverId 1개, 원소 = 이 서버가 구독 중인 sessionId 들
     // 이 서버 인스턴스의 구독 목록
     // joinSession() sessionId 추가, 마지막 ws connection 종료 시 일괄 unsubscribe
     private static final String SERVER_SESSIONS_KEY_PREFIX = "chat:server:sessions:";

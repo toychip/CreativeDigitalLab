@@ -10,10 +10,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * 인증/인가는 과제 비목표라 query param {@code ?userId=} 만으로 식별한다.
- * 운영 시 JWT 토큰 검증 / Spring Security / OAuth 등으로 교체한다.
- */
+// 인증/인가는 과제 비목표. query param {@code ?userId=} 만으로 식별
 @Component
 public class SessionHandshakeInterceptor implements HandshakeInterceptor {
 
