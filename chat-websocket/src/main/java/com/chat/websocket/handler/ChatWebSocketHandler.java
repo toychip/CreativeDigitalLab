@@ -2,6 +2,8 @@ package com.chat.websocket.handler;
 
 import com.chat.application.service.ChatEventService;
 import com.chat.application.service.command.MessageCommand;
+import com.chat.application.sessionuser.SessionUserEntity;
+import com.chat.application.sessionuser.SessionUserRepository;
 import com.chat.domain.exception.CdlException;
 import com.chat.websocket.dto.ErrorMessage;
 import com.chat.websocket.dto.InboundMessageType;
@@ -27,15 +29,18 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final WsConnectionRegistry registry;
     private final ChatEventService chatEventService;
+    private final SessionUserRepository sessionUserRepository;
     private final ObjectMapper objectMapper;
 
     public ChatWebSocketHandler(
             WsConnectionRegistry registry,
             ChatEventService chatEventService,
+            SessionUserRepository sessionUserRepository,
             @Qualifier("distributedObjectMapper") ObjectMapper objectMapper
     ) {
         this.registry = registry;
         this.chatEventService = chatEventService;
+        this.sessionUserRepository = sessionUserRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -107,8 +112,9 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private void subscribeActiveSessions(String userId) {
         try {
-            // TODO SessionMember 프로젝션 도입 시 실제 조회로 교체. 현재는 목 데이터
-            List<String> activeSessionIds = List.of("1234");
+            List<String> activeSessionIds = sessionUserRepository.findByUserIdAndIsActiveTrue(userId).stream()
+                    .map(SessionUserEntity::getSessionId)
+                    .toList();
             activeSessionIds.forEach(sessionId -> registry.joinSession(userId, sessionId));
             log.info("Loaded {} active sessions for userId={}", activeSessionIds.size(), userId);
         } catch (Exception e) {

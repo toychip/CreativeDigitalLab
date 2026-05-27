@@ -1,5 +1,6 @@
 package com.chat.websocket.registry;
 
+import com.chat.application.sessionuser.SessionUserRepository;
 import com.chat.websocket.broadcast.RedisMessageBroker;
 import com.chat.websocket.dto.ChatMessageResponse;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -31,6 +32,7 @@ public class WsConnectionRegistry {
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
     private final RedisMessageBroker redisMessageBroker;
+    private final SessionUserRepository sessionUserRepository;
 
     private final Map<String, Set<WebSocketSession>> userWsConnections = new ConcurrentHashMap<>();
 
@@ -122,8 +124,7 @@ public class WsConnectionRegistry {
         return true;
     }
 
-    // TODO SessionMember 프로젝션 도입 시 실제 조회로 교체. 현재 목: 모든 사용자를 활성 멤버로 간주.
     private boolean isActiveMember(String sessionId, String userId) {
-        return true;
+        return sessionUserRepository.existsBySessionIdAndUserIdAndIsActiveTrue(sessionId, userId);
     }
 }
