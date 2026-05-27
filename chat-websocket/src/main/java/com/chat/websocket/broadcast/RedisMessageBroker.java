@@ -1,6 +1,9 @@
 package com.chat.websocket.broadcast;
 
+import com.chat.domain.common.IdGenerator;
+import com.chat.websocket.dto.ChatMessageResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.connection.Message;
@@ -11,47 +14,66 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiConsumer;
 
 @Slf4j
 @Component
-public class RedisBroadcastSubscriber implements MessageListener {
+public class RedisMessageBroker implements MessageListener {
 
     private static final int MAX_PROCESSED_MESSAGES = 10000;
     private static final int EVICT_BATCH_SIZE = MAX_PROCESSED_MESSAGES / 4;
+
+    // Redis Pub/Sub 채널 토픽 prefix. 채널 단위 = sessionId 1개.
+    // 다른 서버 인스턴스로 메시지를 전달하는 통로 (라디오 주파수).
+    // 사용: broadcast() publish, subscribe()/unsubscribe() listener 등록/해제.
     private static final String SESSION_CHANNEL_PREFIX = "chat.session.";
-    private static final String SERVER_SESSIONS_KEY_PREFIX = "chat:server:sessions:";
 
     private final ObjectMapper objectMapper;
-    private final LocalBroadcaster localBroadcaster;
-    private final GlobalBroadcaster globalBroadcaster;
     private final RedisMessageListenerContainer container;
     private final RedisTemplate<String, String> redisTemplate;
+
+    private String serverId;
+    private BiConsumer<String, ChatMessageResponse> localMessageHandler;
 
     private final Set<String> processedMessages = ConcurrentHashMap.newKeySet();
     private final Set<String> subscribedSessions = ConcurrentHashMap.newKeySet();
 
-    public RedisBroadcastSubscriber(
+    public RedisMessageBroker(
             @Qualifier("distributedObjectMapper") ObjectMapper objectMapper,
-            LocalBroadcaster localBroadcaster,
-            GlobalBroadcaster globalBroadcaster,
             RedisMessageListenerContainer container,
             RedisTemplate<String, String> redisTemplate
     ) {
         this.objectMapper = objectMapper;
-        this.localBroadcaster = localBroadcaster;
-        this.globalBroadcaster = globalBroadcaster;
         this.container = container;
         this.redisTemplate = redisTemplate;
+    }
+
+    @PostConstruct
+    public void init() {
+        this.serverId = "server-" + IdGenerator.generate();
+    }
+
+    public void setLocalMessageHandler(BiConsumer<String, ChatMessageResponse> handler) {
+        this.localMessageHandler = handler;
+    }
+
+    public void broadcast(String sessionId, ChatMessageResponse payload) {
+        try {
+            DistributedMessage message = DistributedMessage.create(serverId, sessionId, payload);
+            String json = objectMapper.writeValueAsString(message);
+            redisTemplate.convertAndSend(SESSION_CHANNEL_PREFIX + sessionId, json);
+            log.info("Broadcast to sessionId={}", sessionId);
+        } catch (Exception e) {
+            log.error("Failed to broadcast to sessionId={}", sessionId, e);
+        }
     }
 
     public void subscribe(String sessionId) {
         if (subscribedSessions.add(sessionId)) {
             ChannelTopic topic = new ChannelTopic(SESSION_CHANNEL_PREFIX + sessionId);
             container.addMessageListener(this, topic);
-            redisTemplate.opsForSet().add(serverSessionsKey(), sessionId);
             log.info("Subscribed to sessionId={}", sessionId);
         }
     }
@@ -60,15 +82,8 @@ public class RedisBroadcastSubscriber implements MessageListener {
         if (subscribedSessions.remove(sessionId)) {
             ChannelTopic topic = new ChannelTopic(SESSION_CHANNEL_PREFIX + sessionId);
             container.removeMessageListener(this, topic);
-            redisTemplate.opsForSet().remove(serverSessionsKey(), sessionId);
             log.info("Unsubscribed from sessionId={}", sessionId);
         }
-    }
-
-    public void unsubscribeAll() {
-        Set<String> snapshot = new HashSet<>(subscribedSessions);
-        snapshot.forEach(this::unsubscribe);
-        redisTemplate.delete(serverSessionsKey());
     }
 
     @Override
@@ -77,18 +92,17 @@ public class RedisBroadcastSubscriber implements MessageListener {
             String json = new String(message.getBody(), StandardCharsets.UTF_8);
             DistributedMessage envelope = objectMapper.readValue(json, DistributedMessage.class);
 
-            // self-echo: 자기 서버가 publish 한 envelope 은 무시
-            if (envelope.excludeServerId().equals(globalBroadcaster.getServerId())) {
+            if (envelope.excludeServerId().equals(serverId)) {
                 return;
             }
 
-            // Redis Pub/Sub 의 같은 envelope 두 번 도착 시 두 번째 skip (Redis Retry)
-            // add 가 false = 이미 있음 = 중복
             if (!processedMessages.add(envelope.id())) {
                 return;
             }
 
-            localBroadcaster.broadcast(envelope.sessionId(), envelope.payload());
+            if (localMessageHandler != null) {
+                localMessageHandler.accept(envelope.sessionId(), envelope.payload());
+            }
 
             if (processedMessages.size() > MAX_PROCESSED_MESSAGES) {
                 evictOldest();
@@ -105,7 +119,7 @@ public class RedisBroadcastSubscriber implements MessageListener {
                 .forEach(processedMessages::remove);
     }
 
-    private String serverSessionsKey() {
-        return SERVER_SESSIONS_KEY_PREFIX + globalBroadcaster.getServerId();
+    public String getServerId() {
+        return serverId;
     }
 }

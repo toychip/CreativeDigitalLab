@@ -3,11 +3,10 @@ package com.chat.websocket.handler;
 import com.chat.application.service.ChatEventService;
 import com.chat.application.service.command.MessageCommand;
 import com.chat.domain.exception.CdlException;
-import com.chat.websocket.broadcast.RedisBroadcastSubscriber;
 import com.chat.websocket.dto.ErrorMessage;
 import com.chat.websocket.dto.InboundMessageType;
 import com.chat.websocket.exception.WebSocketExceptionCode;
-import com.chat.websocket.registry.WebSocketSessionRegistry;
+import com.chat.websocket.registry.WsConnectionRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -20,44 +19,47 @@ import org.springframework.web.socket.WebSocketMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.EOFException;
+import java.util.List;
 
 @Slf4j
 @Component
 public class ChatWebSocketHandler implements WebSocketHandler {
 
-    private final WebSocketSessionRegistry registry;
+    private final WsConnectionRegistry registry;
     private final ChatEventService chatEventService;
-    private final RedisBroadcastSubscriber subscriber;
     private final ObjectMapper objectMapper;
 
     public ChatWebSocketHandler(
-            WebSocketSessionRegistry registry,
+            WsConnectionRegistry registry,
             ChatEventService chatEventService,
-            RedisBroadcastSubscriber subscriber,
             @Qualifier("distributedObjectMapper") ObjectMapper objectMapper
     ) {
         this.registry = registry;
         this.chatEventService = chatEventService;
-        this.subscriber = subscriber;
         this.objectMapper = objectMapper;
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) {
-        String userId = getUserId(session);
+    public void afterConnectionEstablished(WebSocketSession wsConnection) {
+        String userId = getUserId(wsConnection);
         if (userId == null) return;
 
-        registry.addSession(userId, session);
-        log.info("Session established for userId={}", userId);
+        registry.addWsConnection(userId, wsConnection);
+        log.info("Connection established for userId={}", userId);
+        try {
+            subscribeActiveSessions(userId);
+        } catch (Exception e) {
+            log.error("Error while loading active sessions for userId={}", userId, e);
+        }
     }
 
     @Override
-    public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) {
+    public void handleMessage(WebSocketSession wsConnection, WebSocketMessage<?> message) {
         if (!(message instanceof TextMessage textMessage)) {
             log.warn("Unsupported message type: {}", message.getClass().getName());
             return;
         }
-        String userId = getUserId(session);
+        String userId = getUserId(wsConnection);
         if (userId == null) return;
 
         String clientEventId = null;
@@ -74,40 +76,43 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             }
         } catch (CdlException e) {
             log.warn("CdlException: code={}, detail={}", e.code(), e.detail());
-            sendError(session, e, clientEventId);
+            sendError(wsConnection, e, clientEventId);
         } catch (Exception e) {
             log.error("Failed to handle message", e);
-            sendError(session, new CdlException(WebSocketExceptionCode.INVALID_MESSAGE_FORMAT), clientEventId);
+            sendError(wsConnection, new CdlException(WebSocketExceptionCode.INVALID_MESSAGE_FORMAT), clientEventId);
         }
     }
 
     @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) {
-        String userId = getUserId(session);
+    public void handleTransportError(WebSocketSession wsConnection, Throwable exception) {
+        String userId = getUserId(wsConnection);
         if (exception instanceof EOFException) {
             log.debug("WebSocket closed by client. userId={}", userId);
         } else {
             log.error("WebSocket transport error. userId={}", userId, exception);
         }
         if (userId != null) {
-            registry.removeSession(userId, session);
+            registry.removeWsConnection(userId, wsConnection);
         }
-        cleanupIfNoSessions();
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
-        String userId = getUserId(session);
+    public void afterConnectionClosed(WebSocketSession wsConnection, CloseStatus closeStatus) {
+        String userId = getUserId(wsConnection);
         if (userId != null) {
-            registry.removeSession(userId, session);
-            log.info("Session removed for userId={}", userId);
+            registry.removeWsConnection(userId, wsConnection);
+            log.info("Connection removed for userId={}", userId);
         }
-        cleanupIfNoSessions();
     }
 
-    private void cleanupIfNoSessions() {
-        if (!registry.hasAnyOpenSession()) {
-            subscriber.unsubscribeAll();
+    private void subscribeActiveSessions(String userId) {
+        try {
+            // TODO SessionMember 프로젝션 도입 시 실제 조회로 교체. 현재는 목 데이터.
+            List<String> activeSessionIds = List.of("1234");
+            activeSessionIds.forEach(sessionId -> registry.joinSession(userId, sessionId));
+            log.info("Loaded {} active sessions for userId={}", activeSessionIds.size(), userId);
+        } catch (Exception e) {
+            log.error("Failed to load active sessions for userId={}", userId, e);
         }
     }
 
@@ -165,18 +170,18 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         return messageId;
     }
 
-    private void sendError(WebSocketSession session, CdlException e, String clientEventId) {
+    private void sendError(WebSocketSession wsConnection, CdlException e, String clientEventId) {
         try {
             ErrorMessage error = ErrorMessage.from(e, clientEventId);
             String json = objectMapper.writeValueAsString(error);
-            session.sendMessage(new TextMessage(json));
+            wsConnection.sendMessage(new TextMessage(json));
         } catch (Exception ex) {
             log.error("Failed to send error message", ex);
         }
     }
 
-    private String getUserId(WebSocketSession session) {
-        Object value = session.getAttributes().get(SessionHandshakeInterceptor.USER_ID_ATTRIBUTE);
+    private String getUserId(WebSocketSession wsConnection) {
+        Object value = wsConnection.getAttributes().get(SessionHandshakeInterceptor.USER_ID_ATTRIBUTE);
         if (value instanceof String s) return s;
         return null;
     }
