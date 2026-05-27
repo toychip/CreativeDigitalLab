@@ -4,6 +4,7 @@ import com.chat.application.service.ChatEventService;
 import com.chat.application.service.command.MessageCommand;
 import com.chat.application.sessionuser.SessionUserEntity;
 import com.chat.application.sessionuser.SessionUserRepository;
+import com.chat.application.user.UserRepository;
 import com.chat.domain.exception.CdlException;
 import com.chat.websocket.dto.ErrorMessage;
 import com.chat.websocket.dto.InboundMessageType;
@@ -30,17 +31,20 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private final WsConnectionRegistry registry;
     private final ChatEventService chatEventService;
     private final SessionUserRepository sessionUserRepository;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
     public ChatWebSocketHandler(
             WsConnectionRegistry registry,
             ChatEventService chatEventService,
             SessionUserRepository sessionUserRepository,
+            UserRepository userRepository,
             @Qualifier("distributedObjectMapper") ObjectMapper objectMapper
     ) {
         this.registry = registry;
         this.chatEventService = chatEventService;
         this.sessionUserRepository = sessionUserRepository;
+        this.userRepository = userRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -79,6 +83,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 case EDIT_MESSAGE -> handleEditMessage(userId, root);
                 case DELETE_MESSAGE -> handleDeleteMessage(userId, root);
             }
+            touchLastSeen(userId);
         } catch (CdlException e) {
             log.warn("CdlException: code={}, detail={}", e.code(), e.detail());
             sendError(wsConnection, e, clientEventId);
@@ -106,6 +111,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String userId = getUserId(wsConnection);
         if (userId != null) {
             registry.removeWsConnection(userId, wsConnection);
+            touchLastSeen(userId);
             log.info("Connection removed for userId={}", userId);
         }
     }
@@ -190,5 +196,16 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         Object value = wsConnection.getAttributes().get(SessionHandshakeInterceptor.USER_ID_ATTRIBUTE);
         if (value instanceof String s) return s;
         return null;
+    }
+
+    private void touchLastSeen(String userId) {
+        try {
+            userRepository.findById(userId).ifPresent(user -> {
+                user.touchLastSeen();
+                userRepository.save(user);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to touch lastSeenAt for userId={}", userId, e);
+        }
     }
 }
