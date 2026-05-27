@@ -1,6 +1,6 @@
 package com.chat.websocket.dto;
 
-import com.chat.domain.exception.ChatException;
+import com.chat.domain.exception.CdlException;
 
 public record ErrorMessage(
     String code,
@@ -8,7 +8,7 @@ public record ErrorMessage(
     String detail,
     String clientEventId
 ) {
-    public static ErrorMessage from(ChatException e, String clientEventId) {
+    public static ErrorMessage from(CdlException e, String clientEventId) {
         return new ErrorMessage(e.code(), e.defaultMessage(), e.detail(), clientEventId);
     }
 }

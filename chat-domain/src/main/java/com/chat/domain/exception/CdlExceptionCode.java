@@ -1,6 +1,6 @@
 package com.chat.domain.exception;
 
-public interface ExceptionCode {
+public interface CdlExceptionCode {
 
     String code();
 
