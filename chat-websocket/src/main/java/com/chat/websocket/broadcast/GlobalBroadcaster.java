@@ -1,6 +1,5 @@
 package com.chat.websocket.broadcast;
 
-import com.chat.domain.common.IdGenerator;
 import com.chat.websocket.dto.ChatMessageResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Getter;
@@ -9,11 +8,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-
 @Slf4j
 @Component
-public class RedisBroadcastPublisher {
+public class GlobalBroadcaster {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final ObjectMapper objectMapper;
@@ -21,7 +18,7 @@ public class RedisBroadcastPublisher {
     @Getter
     private final String serverId = resolveServerId();
 
-    public RedisBroadcastPublisher(
+    public GlobalBroadcaster(
             RedisTemplate<String, String> redisTemplate,
             @Qualifier("distributedObjectMapper") ObjectMapper objectMapper
     ) {
@@ -29,18 +26,12 @@ public class RedisBroadcastPublisher {
         this.objectMapper = objectMapper;
     }
 
-    public void publish(String sessionId, ChatMessageResponse payload) {
+    public void broadcast(String sessionId, ChatMessageResponse payload) {
         try {
-            DistributedMessage envelope = new DistributedMessage(
-                    IdGenerator.generate(),
-                    serverId,
-                    sessionId,
-                    serverId,
-                    Instant.now(),
-                    payload
-            );
-            String json = objectMapper.writeValueAsString(envelope);
-            redisTemplate.convertAndSend(channel(sessionId), json);
+            DistributedMessage message = DistributedMessage.create(serverId, sessionId, payload);
+            String json = objectMapper.writeValueAsString(message);
+            String sessionKey = channel(sessionId);
+            redisTemplate.convertAndSend(sessionKey, json);
             log.info("Broadcast to sessionId={}", sessionId);
         } catch (Exception e) {
             log.error("Failed to broadcast to sessionId={}", sessionId, e);

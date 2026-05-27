@@ -2,9 +2,12 @@ package com.chat.websocket.registry;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.io.IOException;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,5 +43,26 @@ public class WebSocketSessionRegistry {
 
     public Set<String> connectedUserIds() {
         return Collections.unmodifiableSet(userSessions.keySet());
+    }
+
+    public void sendToUser(String userId, String json) {
+        Set<WebSocketSession> sessions = userSessions.get(userId);
+        if (sessions == null) {
+            return;
+        }
+        Set<WebSocketSession> closedSessions = new HashSet<>();
+        sessions.forEach(ws -> {
+            if (!ws.isOpen()) {
+                closedSessions.add(ws);
+                return;
+            }
+            try {
+                ws.sendMessage(new TextMessage(json));
+            } catch (IOException e) {
+                log.warn("Failed to send to userId={}", userId, e);
+                closedSessions.add(ws);
+            }
+        });
+        closedSessions.forEach(ws -> removeSession(userId, ws));
     }
 }
