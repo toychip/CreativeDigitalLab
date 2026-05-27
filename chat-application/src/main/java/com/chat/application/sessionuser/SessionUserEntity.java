@@ -77,4 +77,11 @@ public class SessionUserEntity {
                 null
         );
     }
+
+    /** leave 후 재참여: 기존 row 재활성화 */
+    public void rejoin() {
+        this.isActive = true;
+        this.leftAt = null;
+        this.joinedAt = LocalDateTime.now();
+    }
 }

@@ -17,6 +17,9 @@ public interface SessionUserRepository extends JpaRepository<SessionUserEntity, 
 
     Optional<SessionUserEntity> findBySessionIdAndUserIdAndIsActiveTrue(String sessionId, String userId);
 
+    /** isActive 무관하게 조회 — rejoin 시 기존 row 찾기용 */
+    Optional<SessionUserEntity> findBySessionIdAndUserId(String sessionId, String userId);
+
     boolean existsBySessionIdAndUserIdAndIsActiveTrue(String sessionId, String userId);
 
     @Query("SELECT COUNT(su) FROM SessionUserEntity su WHERE su.sessionId = :sessionId AND su.isActive = true")
