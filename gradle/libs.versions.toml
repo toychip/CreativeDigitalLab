@@ -28,6 +28,8 @@ mysql = { group = "com.mysql", name = "mysql-connector-j" }
 
 # Jackson (도메인 모듈에서 record + JSON annotation 만 사용)
 jackson-annotations = { group = "com.fasterxml.jackson.core", name = "jackson-annotations" }
+jackson-databind    = { group = "com.fasterxml.jackson.core", name = "jackson-databind" }
+jackson-jsr310      = { group = "com.fasterxml.jackson.datatype", name = "jackson-datatype-jsr310" }
 
 # UUID v7 생성기 (Java native 미지원이라 라이브러리 사용)
 java-uuid-generator = { group = "com.fasterxml.uuid", name = "java-uuid-generator", version.ref = "javaUuidGenerator" }
