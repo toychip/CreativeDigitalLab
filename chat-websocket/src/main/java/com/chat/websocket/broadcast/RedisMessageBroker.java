@@ -25,9 +25,7 @@ public class RedisMessageBroker implements MessageListener {
     private static final int MAX_PROCESSED_MESSAGES = 10000;
     private static final int EVICT_BATCH_SIZE = MAX_PROCESSED_MESSAGES / 4;
 
-    // Redis Pub/Sub 채널 토픽 prefix. 채널 단위 = sessionId 1개.
-    // 다른 서버 인스턴스로 메시지를 전달하는 통로 (라디오 주파수).
-    // 사용: broadcast() publish, subscribe()/unsubscribe() listener 등록/해제.
+    // 사용: broadcast() publish, subscribe()/unsubscribe() listener 등록/해제
     private static final String SESSION_CHANNEL_PREFIX = "chat.session.";
 
     private final ObjectMapper objectMapper;
