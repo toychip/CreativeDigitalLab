@@ -4,21 +4,15 @@ plugins {
 
 dependencies {
     implementation project(':chat-application')
-    implementation project(':chat-websocket')
     implementation project(':chat-domain')
 
-    implementation libs.bundles.api
+    implementation libs.spring.boot.starter.websocket
+
+    implementation libs.jackson.databind
+    implementation libs.jackson.jsr310
 
     compileOnly libs.lombok
     annotationProcessor libs.lombok
     testCompileOnly libs.lombok
     testAnnotationProcessor libs.lombok
-}
-
-tasks.named('bootJar') {
-    enabled = true
-}
-
-tasks.named('jar') {
-    enabled = false
 }
