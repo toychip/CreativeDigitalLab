@@ -3,6 +3,7 @@ package com.chat.websocket.handler;
 import com.chat.application.service.ChatEventService;
 import com.chat.application.service.command.MessageCommand;
 import com.chat.domain.exception.CdlException;
+import com.chat.websocket.broadcast.RedisBroadcastSubscriber;
 import com.chat.websocket.dto.ErrorMessage;
 import com.chat.websocket.dto.InboundMessageType;
 import com.chat.websocket.exception.WebSocketExceptionCode;
@@ -26,15 +27,18 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final WebSocketSessionRegistry registry;
     private final ChatEventService chatEventService;
+    private final RedisBroadcastSubscriber subscriber;
     private final ObjectMapper objectMapper;
 
     public ChatWebSocketHandler(
             WebSocketSessionRegistry registry,
             ChatEventService chatEventService,
+            RedisBroadcastSubscriber subscriber,
             @Qualifier("distributedObjectMapper") ObjectMapper objectMapper
     ) {
         this.registry = registry;
         this.chatEventService = chatEventService;
+        this.subscriber = subscriber;
         this.objectMapper = objectMapper;
     }
 
@@ -88,6 +92,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         if (userId != null) {
             registry.removeSession(userId, session);
         }
+        cleanupIfNoSessions();
     }
 
     @Override
@@ -96,6 +101,13 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         if (userId != null) {
             registry.removeSession(userId, session);
             log.info("Session removed for userId={}", userId);
+        }
+        cleanupIfNoSessions();
+    }
+
+    private void cleanupIfNoSessions() {
+        if (!registry.hasAnyOpenSession()) {
+            subscriber.unsubscribeAll();
         }
     }
 

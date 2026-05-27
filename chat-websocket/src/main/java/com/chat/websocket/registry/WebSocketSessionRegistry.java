@@ -45,6 +45,12 @@ public class WebSocketSessionRegistry {
         return Collections.unmodifiableSet(userSessions.keySet());
     }
 
+    public boolean hasAnyOpenSession() {
+        return userSessions.values().stream()
+                .flatMap(Set::stream)
+                .anyMatch(WebSocketSession::isOpen);
+    }
+
     public void sendToUser(String userId, String json) {
         Set<WebSocketSession> sessions = userSessions.get(userId);
         if (sessions == null) {
