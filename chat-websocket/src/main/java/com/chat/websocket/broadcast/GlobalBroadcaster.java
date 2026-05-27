@@ -1,7 +1,9 @@
 package com.chat.websocket.broadcast;
 
+import com.chat.domain.common.IdGenerator;
 import com.chat.websocket.dto.ChatMessageResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -16,7 +18,12 @@ public class GlobalBroadcaster {
     private final ObjectMapper objectMapper;
 
     @Getter
-    private final String serverId = resolveServerId();
+    private String serverId;
+
+    @PostConstruct
+    public void init() {
+        this.serverId = "server-" + IdGenerator.generate();
+    }
 
     public GlobalBroadcaster(
             RedisTemplate<String, String> redisTemplate,
@@ -40,13 +47,5 @@ public class GlobalBroadcaster {
 
     private String channel(String sessionId) {
         return "chat.session." + sessionId;
-    }
-
-    private static String resolveServerId() {
-        String hostname = System.getenv("HOSTNAME");
-        if (hostname == null) {
-            throw new IllegalStateException("HOSTNAME 환경 변수가 필요합니다");
-        }
-        return hostname;
     }
 }
