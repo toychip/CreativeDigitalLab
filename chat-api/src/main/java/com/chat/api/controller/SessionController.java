@@ -1,5 +1,6 @@
 package com.chat.api.controller;
 
+import com.chat.api.controller.docs.SessionControllerDocs;
 import com.chat.api.dto.ClientEventRequest;
 import com.chat.api.dto.SessionCreateRequest;
 import com.chat.api.dto.SessionCreateResponse;
@@ -30,11 +31,12 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/sessions")
 @RequiredArgsConstructor
-public class SessionController {
+public class SessionController implements SessionControllerDocs {
 
     private final ChatEventService chatEventService;
     private final SessionQueryService sessionQueryService;
 
+    @Override
     @PostMapping
     public SessionCreateResponse createSession(@RequestBody SessionCreateRequest request) {
         String sessionId = IdGenerator.generate();
@@ -42,7 +44,7 @@ public class SessionController {
         return new SessionCreateResponse(sessionId);
     }
 
-    /** 세션 참여 */
+    @Override
     @PostMapping("/{sessionId}/join")
     public void joinSession(
             @PathVariable String sessionId,
@@ -51,7 +53,7 @@ public class SessionController {
                 new UserCommand(sessionId, request.clientEventId(), request.userId(), UserEvent.Type.JOINED));
     }
 
-    /** 세션 퇴장 */
+    @Override
     @PostMapping("/{sessionId}/leave")
     public void leaveSession(
             @PathVariable String sessionId,
@@ -60,7 +62,7 @@ public class SessionController {
                 new UserCommand(sessionId, request.clientEventId(), request.userId(), UserEvent.Type.LEFT));
     }
 
-    /** 세션 중단 */
+    @Override
     @PostMapping("/{sessionId}/suspend")
     public void suspendSession(
             @PathVariable String sessionId,
@@ -69,7 +71,7 @@ public class SessionController {
                 new LifecycleCommand(sessionId, request.clientEventId(), SessionStatus.SUSPENDED));
     }
 
-    /** 세션 종료 */
+    @Override
     @PostMapping("/{sessionId}/end")
     public void endSession(
             @PathVariable String sessionId,
@@ -78,7 +80,7 @@ public class SessionController {
                 new LifecycleCommand(sessionId, request.clientEventId(), SessionStatus.ENDED));
     }
 
-    // 세션 목록 커서 페이징 (status/기간 필터, 모두 선택적) 커서 = sessionId
+    @Override
     @GetMapping
     public SessionPageResponse listSessions(
             @RequestParam(required = false) SessionStatus status,
@@ -89,13 +91,13 @@ public class SessionController {
         return sessionQueryService.getSessions(status, from, to, cursor, limit);
     }
 
-    // 세션 단건 조회 + 참여 이력 전체(active + 퇴장)
+    @Override
     @GetMapping("/{sessionId}")
     public SessionDetailResponse getSession(@PathVariable String sessionId) {
         return sessionQueryService.getSessionDetail(sessionId);
     }
 
-    // 특정 시점 상태 복원 (이벤트 fold) at 없으면 현재 기준 전체
+    @Override
     @GetMapping("/{sessionId}/timeline")
     public TimelineResponse getTimeline(
             @PathVariable String sessionId,

@@ -4,6 +4,7 @@ springBoot = "3.5.0"
 springDependencyManagement = "1.1.7"
 lombok = "1.18.36"
 javaUuidGenerator = "5.1.0"
+springdoc = "2.8.14"
 
 [plugins]
 spring-boot = { id = "org.springframework.boot", version.ref = "springBoot" }
@@ -33,6 +34,9 @@ jackson-jsr310      = { group = "com.fasterxml.jackson.datatype", name = "jackso
 
 # UUID v7 생성기 (Java native 미지원이라 라이브러리 사용)
 java-uuid-generator = { group = "com.fasterxml.uuid", name = "java-uuid-generator", version.ref = "javaUuidGenerator" }
+
+# OpenAPI (springdoc) — Spring Boot BOM 에 없어 버전 명시
+springdoc-openapi-ui = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "springdoc" }
 
 # Lombok
 lombok = { group = "org.projectlombok", name = "lombok", version.ref = "lombok" }

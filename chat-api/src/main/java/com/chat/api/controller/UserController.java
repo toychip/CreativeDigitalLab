@@ -1,5 +1,6 @@
 package com.chat.api.controller;
 
+import com.chat.api.controller.docs.UserControllerDocs;
 import com.chat.api.dto.UserCreateRequest;
 import com.chat.application.user.UserCreateResponse;
 import com.chat.application.user.UserService;
@@ -12,10 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
-public class UserController {
+public class UserController implements UserControllerDocs {
 
     private final UserService userService;
 
+    @Override
     @PostMapping
     public UserCreateResponse createUser(@RequestBody UserCreateRequest request) {
         return userService.createUser(request.userId(), request.username());
