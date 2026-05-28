@@ -11,6 +11,9 @@ import java.util.Optional;
 
 public interface ChatEventService {
 
+    // 세션 생성: LifecycleEvent(ACTIVE) + 생성자 UserEvent(JOINED) 를 한 트랜잭션으로 원자 발행.
+    void createSession(String sessionId, String clientEventId, String creatorUserId);
+
     Optional<LifecycleEvent> appendLifecycle(LifecycleCommand command);
 
     Optional<UserEvent> appendUser(UserCommand command);

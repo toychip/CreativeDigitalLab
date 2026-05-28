@@ -9,6 +9,7 @@ import com.chat.application.service.command.UserCommand;
 import com.chat.domain.event.LifecycleEvent;
 import com.chat.domain.event.MessageEvent;
 import com.chat.domain.event.UserEvent;
+import com.chat.domain.session.SessionStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -24,6 +25,25 @@ public class ChatEventServiceImpl implements ChatEventService {
     private final EventRepository eventRepository;
     private final SequenceGenerator sequenceGenerator;
     private final ApplicationEventPublisher eventPublisher;
+
+    @Override
+    @Transactional
+    public void createSession(String sessionId, String clientEventId, String creatorUserId) {
+        long lifecycleSeq = sequenceGenerator.nextSeq(sessionId);
+        LifecycleEvent lifecycle = LifecycleEvent.create(
+            sessionId, clientEventId, lifecycleSeq, SessionStatus.ACTIVE
+        );
+        eventRepository.saveAndFlush(EventEntity.from(lifecycle));
+
+        long userSeq = sequenceGenerator.nextSeq(sessionId);
+        UserEvent user = UserEvent.create(
+            sessionId, clientEventId, userSeq, creatorUserId, UserEvent.Type.JOINED
+        );
+        eventRepository.saveAndFlush(EventEntity.from(user));
+
+        eventPublisher.publishEvent(lifecycle);
+        eventPublisher.publishEvent(user);
+    }
 
     @Override
     @Transactional
