@@ -15,13 +15,13 @@ import java.time.Instant;
 
 @Entity
 @Table(
-        name = "event",
+        name = "events",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_event_session_client", columnNames = {"session_id", "client_event_id"}),
-                @UniqueConstraint(name = "uk_event_session_seq", columnNames = {"session_id", "seq"})
+                @UniqueConstraint(name = "uk_events_session_client", columnNames = {"session_id", "client_event_id"}),
+                @UniqueConstraint(name = "uk_events_session_seq", columnNames = {"session_id", "seq"})
         },
         indexes = {
-                @Index(name = "idx_session_created", columnList = "session_id, created_at")
+                @Index(name = "idx_events_session_created", columnList = "session_id, created_at")
         }
 )
 @Getter
