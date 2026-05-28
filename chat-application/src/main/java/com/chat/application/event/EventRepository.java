@@ -10,6 +10,8 @@ import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<EventEntity, String> {
 
+    boolean existsBySessionId(String sessionId);
+
     /**
      * 재연결 catch-up: 클라가 가진 seq 이후의 이벤트들 시간순 반환
      * {@code uk_event_session_seq} 인덱스 활용.

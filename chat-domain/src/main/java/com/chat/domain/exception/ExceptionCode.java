@@ -12,6 +12,7 @@ public enum ExceptionCode {
     // 409
     SESSION_ALREADY_ENDED(409, "이미 종료된 세션입니다."),
     USER_ID_ALREADY_TAKEN(409, "이미 사용 중인 userId 입니다."),
+    DUPLICATE_EVENT(409, "이미 처리된 이벤트입니다 (clientEventId 중복)."),
 
     // WebSocket — HTTP 무관 (statusCode null, sendError 로 전달)
     INVALID_MESSAGE_FORMAT(null, "메시지 형식이 올바르지 않습니다."),
