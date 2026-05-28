@@ -1,5 +1,6 @@
 package com.chat.api.controller;
 
+import com.chat.api.controller.docs.MessageControllerDocs;
 import com.chat.application.message.MessageDirection;
 import com.chat.application.message.MessagePageResponse;
 import com.chat.application.message.MessageQueryService;
@@ -13,14 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/sessions/{sessionId}/messages")
 @RequiredArgsConstructor
-public class MessageController {
+public class MessageController implements MessageControllerDocs {
 
     private final MessageQueryService messageQueryService;
 
-    /**
-     * 메시지 목록 커서 페이징 (read model 직접 조회)
-     * cursor 없으면 최신부터, BEFORE 는 과거 방향, AFTER 는 최신 방향. 커서 값은 seq
-     */
+    @Override
     @GetMapping("/cursor")
     public MessagePageResponse getMessages(
             @PathVariable String sessionId,
