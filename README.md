@@ -4,6 +4,14 @@
 
 실시간 1:1 채팅 + 이벤트 기반 상태 복원 시스템 설계 메모. 구현한 것과 설계만 한 것을 구분. DB 는 ERD.md, 분산 중복 한계는 중복한계.md
 
+## 실행 방법
+
+Linux / macOS 환경, 프로젝트 루트에서
+
+```bash
+./start-cluster.sh
+```
+
 ## 기술 스택
 
 - Java 21 — 이벤트 타입을 sealed interface + switch 로 망라. 한 종류라도 누락하면 컴파일 에러
@@ -15,7 +23,7 @@
 
 ## 아키텍처
 
-쓰기는 전부 events 에 추가, 읽기는 두 갈래
+쓰기는 전부 events 에 추가, 읽기는 실시간 통신과 이전 데이터 조회로 나뉨
 
 ```
 쓰기 ─ ChatEventService → events(append-only)
