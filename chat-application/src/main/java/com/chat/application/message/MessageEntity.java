@@ -1,5 +1,6 @@
 package com.chat.application.message;
 
+import com.chat.application.common.BaseEntity;
 import com.chat.domain.session.MessageStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -13,8 +14,6 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
-
 @Entity
 @Table(
         name = "messages",
@@ -26,7 +25,7 @@ import java.time.Instant;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class MessageEntity {
+public class MessageEntity extends BaseEntity {
 
     @Id
     @Column(name = "message_id", length = 36, nullable = false, updatable = false)
@@ -48,18 +47,14 @@ public class MessageEntity {
     @Column(nullable = false)
     private long seq;
 
-    @Column(nullable = false, updatable = false)
-    private Instant createdAt;
-
     public static MessageEntity send(
             String messageId,
             String sessionId,
             String senderId,
             String content,
-            long seq,
-            Instant createdAt
+            long seq
     ) {
-        return new MessageEntity(messageId, sessionId, senderId, content, MessageStatus.SENT, seq, createdAt);
+        return new MessageEntity(messageId, sessionId, senderId, content, MessageStatus.SENT, seq);
     }
 
     public void edit(String content) {

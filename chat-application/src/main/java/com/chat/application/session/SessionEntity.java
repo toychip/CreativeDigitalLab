@@ -1,9 +1,9 @@
 package com.chat.application.session;
 
+import com.chat.application.common.BaseEntity;
 import com.chat.domain.session.SessionStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
@@ -13,8 +13,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -26,11 +24,10 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_session_started_at", columnList = "started_at")
         }
 )
-@EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class SessionEntity {
+public class SessionEntity extends BaseEntity {
 
     @Id
     @Column(name = "session_id", length = 36, nullable = false, updatable = false)
@@ -46,16 +43,11 @@ public class SessionEntity {
     @Column
     private LocalDateTime endedAt;
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     public static SessionEntity start(String sessionId) {
         return new SessionEntity(
                 sessionId,
                 SessionStatus.ACTIVE,
                 LocalDateTime.now(),
-                null,
                 null
         );
     }

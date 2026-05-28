@@ -1,5 +1,6 @@
 package com.chat.application.user;
 
+import com.chat.application.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -16,7 +17,7 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class UserEntity {
+public class UserEntity extends BaseEntity {
 
     @Id
     @Column(name = "user_id", length = 36, nullable = false, updatable = false)

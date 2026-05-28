@@ -1,8 +1,8 @@
 package com.chat.application.sessionuser;
 
+import com.chat.application.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
@@ -15,8 +15,6 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
@@ -32,11 +30,10 @@ import java.time.LocalDateTime;
                 @Index(name = "idx_session_user_active", columnList = "is_active")
         }
 )
-@EntityListeners(AuditingEntityListener.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class SessionUserEntity {
+public class SessionUserEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -61,10 +58,6 @@ public class SessionUserEntity {
     @Column
     private LocalDateTime leftAt;
 
-    @CreatedDate
-    @Column(nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
     public static SessionUserEntity join(String sessionId, String userId, MemberRole role) {
         return new SessionUserEntity(
                 null,
@@ -73,7 +66,6 @@ public class SessionUserEntity {
                 role,
                 true,
                 LocalDateTime.now(),
-                null,
                 null
         );
     }

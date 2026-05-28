@@ -1,5 +1,6 @@
 package com.chat.application.listener;
 
+import com.chat.application.config.AsyncConfig;
 import com.chat.application.message.MessageEntity;
 import com.chat.application.message.MessageRepository;
 import com.chat.application.session.SessionEntity;
@@ -29,7 +30,7 @@ public class ProjectionUpdater {
     private final SessionUserRepository sessionUserRepository;
     private final MessageRepository messageRepository;
 
-    @Async
+    @Async(AsyncConfig.PROJECTION_EXECUTOR)
     @Transactional
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void on(ChatEvent event) {
@@ -45,62 +46,90 @@ public class ProjectionUpdater {
     }
 
     private void handleLifecycle(LifecycleEvent event) {
-        sessionRepository.findById(event.sessionId()).ifPresentOrElse(
-            entity -> {
-                if (entity.getStatus() == SessionStatus.ENDED) {
-                    log.warn("Lifecycle event on ENDED session, ignoring. sessionId={}, incomingStatus={}",
-                        event.sessionId(), event.status());
-                    return;
-                }
-                entity.changeStatus(event.status());
-            },
-            () -> {
-                if (event.status() == SessionStatus.ACTIVE) {
-                    sessionRepository.save(SessionEntity.start(event.sessionId()));
-                } else {
-                    log.warn("No session found and status is not ACTIVE, ignoring. sessionId={}, status={}",
-                        event.sessionId(), event.status());
-                }
-            }
-        );
+        SessionEntity session = sessionRepository.findById(event.sessionId()).orElse(null);
+
+        if (session == null) {
+            createSessionIfActive(event);
+            return;
+        }
+
+        if (session.getStatus() == SessionStatus.ENDED) {
+            log.warn("Lifecycle event on ENDED session, ignoring. sessionId={}, incomingStatus={}",
+                    event.sessionId(), event.status());
+            return;
+        }
+
+        session.changeStatus(event.status());
+    }
+
+    private void createSessionIfActive(LifecycleEvent event) {
+        if (event.status() != SessionStatus.ACTIVE) {
+            log.warn("No session found and status is not ACTIVE, ignoring. sessionId={}, status={}",
+                    event.sessionId(), event.status());
+            return;
+        }
+        sessionRepository.save(SessionEntity.start(event.sessionId()));
     }
 
     private void handleUser(UserEvent event) {
         switch (event.type()) {
-            case JOINED -> {
-                if (sessionUserRepository.existsBySessionIdAndUserIdAndIsActiveTrue(
-                        event.sessionId(), event.userId())) {
-                    return; // 이미 활성 참여 중 — 멱등
-                }
-                sessionUserRepository.findBySessionIdAndUserId(event.sessionId(), event.userId())
-                    .ifPresentOrElse(
-                        entity -> entity.rejoin(),  // 퇴장 이력 있는 row 재활성화
-                        () -> sessionUserRepository.save(
-                            SessionUserEntity.join(event.sessionId(), event.userId(), MemberRole.MEMBER)
-                        )
-                    );
-            }
+            case JOINED -> handleUserJoined(event);
             case LEFT -> sessionUserRepository.leaveSession(event.sessionId(), event.userId());
         }
     }
 
+    private void handleUserJoined(UserEvent event) {
+        boolean alreadyActive = sessionUserRepository.existsBySessionIdAndUserIdAndIsActiveTrue(
+                event.sessionId(), event.userId());
+        if (alreadyActive) {
+            return;
+        }
+
+        SessionUserEntity previous = sessionUserRepository
+                .findBySessionIdAndUserId(event.sessionId(), event.userId())
+                .orElse(null);
+
+        if (previous != null) {
+            previous.rejoin();
+            return;
+        }
+
+        sessionUserRepository.save(
+                SessionUserEntity.join(event.sessionId(), event.userId(), MemberRole.MEMBER));
+    }
+
     private void handleMessage(MessageEvent event) {
         switch (event.type()) {
-            case SENT -> {
-                if (messageRepository.existsById(event.messageId())) return; // 멱등
-                messageRepository.save(MessageEntity.send(
-                    event.messageId(), event.sessionId(), event.senderId(),
-                    event.content(), event.seq(), event.createdAt()
-                ));
-            }
-            case EDITED -> messageRepository.findById(event.messageId()).ifPresentOrElse(
-                entity -> entity.edit(event.content()),
-                () -> log.warn("EDITED event for unknown messageId={}", event.messageId())
-            );
-            case DELETED -> messageRepository.findById(event.messageId()).ifPresentOrElse(
-                MessageEntity::delete,
-                () -> log.warn("DELETED event for unknown messageId={}", event.messageId())
-            );
+            case SENT -> handleMessageSent(event);
+            case EDITED -> handleMessageEdited(event);
+            case DELETED -> handleMessageDeleted(event);
         }
+    }
+
+    private void handleMessageSent(MessageEvent event) {
+        if (messageRepository.existsById(event.messageId())) {
+            return;
+        }
+        messageRepository.save(MessageEntity.send(
+                event.messageId(), event.sessionId(), event.senderId(),
+                event.content(), event.seq()));
+    }
+
+    private void handleMessageEdited(MessageEvent event) {
+        MessageEntity message = messageRepository.findById(event.messageId()).orElse(null);
+        if (message == null) {
+            log.warn("EDITED event for unknown messageId={}", event.messageId());
+            return;
+        }
+        message.edit(event.content());
+    }
+
+    private void handleMessageDeleted(MessageEvent event) {
+        MessageEntity message = messageRepository.findById(event.messageId()).orElse(null);
+        if (message == null) {
+            log.warn("DELETED event for unknown messageId={}", event.messageId());
+            return;
+        }
+        message.delete();
     }
 }
