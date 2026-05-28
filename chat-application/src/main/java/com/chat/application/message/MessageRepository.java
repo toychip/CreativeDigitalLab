@@ -9,9 +9,6 @@ import java.util.List;
 @Repository
 public interface MessageRepository extends JpaRepository<MessageEntity, String> {
 
-    List<MessageEntity> findBySessionIdOrderBySeqAsc(String sessionId);
-
-    /** 커서 없음 — 최신부터 (seq 내림차순). Limit 은 순수 LIMIT — OFFSET·count 없음 */
     List<MessageEntity> findBySessionIdOrderBySeqDesc(String sessionId, Limit limit);
 
     /** BEFORE — 커서보다 과거 (seq < cursor, 내림차순) */

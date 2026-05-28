@@ -25,9 +25,6 @@ public interface SessionUserRepository extends JpaRepository<SessionUserEntity, 
 
     boolean existsBySessionIdAndUserIdAndIsActiveTrue(String sessionId, String userId);
 
-    @Query("SELECT COUNT(su) FROM SessionUserEntity su WHERE su.sessionId = :sessionId AND su.isActive = true")
-    long countActiveMembersInSession(String sessionId);
-
     @Modifying
     @Query("""
             UPDATE SessionUserEntity su
