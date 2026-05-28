@@ -41,6 +41,7 @@ public class ProjectionUpdater {
                 case MessageEvent e -> handleMessage(e);
             }
         } catch (Exception ex) {
+            // TODO Production 환경에서 트래픽 파악하여 재시도 규칙 설정 (projection 실패 시 재시도/DLQ)
             log.error("Projection update failed. eventId={}, sessionId={}", event.eventId(), event.sessionId(), ex);
         }
     }
@@ -118,6 +119,7 @@ public class ProjectionUpdater {
     private void handleMessageEdited(MessageEvent event) {
         MessageEntity message = messageRepository.findById(event.messageId()).orElse(null);
         if (message == null) {
+            // TODO Production 환경에서 트래픽 파악하여 재시도 규칙 설정 (순서 역전으로 SENT 미도착 시 재시도)
             log.warn("EDITED event for unknown messageId={}", event.messageId());
             return;
         }
@@ -127,6 +129,7 @@ public class ProjectionUpdater {
     private void handleMessageDeleted(MessageEvent event) {
         MessageEntity message = messageRepository.findById(event.messageId()).orElse(null);
         if (message == null) {
+            // TODO Production 환경에서 트래픽 파악하여 재시도 규칙 설정 (순서 역전으로 SENT 미도착 시 재시도)
             log.warn("DELETED event for unknown messageId={}", event.messageId());
             return;
         }
