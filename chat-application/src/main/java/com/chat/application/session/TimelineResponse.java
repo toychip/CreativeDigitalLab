@@ -1,11 +1,10 @@
-package com.chat.api.dto;
+package com.chat.application.session;
 
 import com.chat.domain.session.ChatSession;
 import com.chat.domain.session.Message;
 import com.chat.domain.session.MessageStatus;
 import com.chat.domain.session.SessionStatus;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 

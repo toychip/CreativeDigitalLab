@@ -13,6 +13,9 @@ public interface SessionUserRepository extends JpaRepository<SessionUserEntity, 
 
     List<SessionUserEntity> findBySessionIdAndIsActiveTrue(String sessionId);
 
+    /** 참여 이력 전체 (active + 퇴장), 참여 순 */
+    List<SessionUserEntity> findBySessionIdOrderByJoinedAtAsc(String sessionId);
+
     List<SessionUserEntity> findByUserIdAndIsActiveTrue(String userId);
 
     Optional<SessionUserEntity> findBySessionIdAndUserIdAndIsActiveTrue(String sessionId, String userId);
