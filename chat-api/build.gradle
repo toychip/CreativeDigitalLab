@@ -9,6 +9,7 @@ dependencies {
 
     implementation libs.bundles.api
     implementation libs.spring.boot.starter.jpa
+    implementation libs.springdoc.openapi.ui
 
     compileOnly libs.lombok
     annotationProcessor libs.lombok
