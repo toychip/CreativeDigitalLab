@@ -48,6 +48,9 @@ public class SessionQueryServiceImpl implements SessionQueryService {
     @Override
     @Transactional(readOnly = true)
     public TimelineResponse getTimeline(String sessionId, Instant at) {
+        if (!sessionRepository.existsById(sessionId)) {
+            throw new CdlException(ExceptionCode.SESSION_NOT_FOUND);
+        }
         List<EventEntity> entities = (at != null)
                 ? eventRepository.findEventsUpTo(sessionId, at)
                 : eventRepository.findAllBySessionId(sessionId);
