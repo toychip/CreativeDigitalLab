@@ -64,6 +64,7 @@ public class RedisMessageBroker implements MessageListener {
             redisTemplate.convertAndSend(SESSION_CHANNEL_PREFIX + sessionId, json);
             log.info("Broadcast to sessionId={}", sessionId);
         } catch (Exception e) {
+            // TODO Production 환경에서 트래픽 파악하여 재시도 규칙 설정 (publish 실패 시 재시도/outbox)
             log.error("Failed to broadcast to sessionId={}", sessionId, e);
         }
     }
@@ -106,6 +107,7 @@ public class RedisMessageBroker implements MessageListener {
                 evictOldest();
             }
         } catch (Exception e) {
+            // TODO Production 환경에서 트래픽 파악하여 재시도 규칙 설정 (수신 처리 실패 시 재시도)
             log.error("Failed to handle Redis message", e);
         }
     }

@@ -2,10 +2,13 @@ package com.chat.websocket.handler;
 
 import com.chat.application.service.ChatEventService;
 import com.chat.application.service.command.MessageCommand;
+import com.chat.application.sessionuser.SessionUserEntity;
+import com.chat.application.sessionuser.SessionUserRepository;
+import com.chat.application.user.UserRepository;
 import com.chat.domain.exception.CdlException;
 import com.chat.websocket.dto.ErrorMessage;
 import com.chat.websocket.dto.InboundMessageType;
-import com.chat.websocket.exception.WebSocketExceptionCode;
+import com.chat.domain.exception.ExceptionCode;
 import com.chat.websocket.registry.WsConnectionRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,15 +30,21 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private final WsConnectionRegistry registry;
     private final ChatEventService chatEventService;
+    private final SessionUserRepository sessionUserRepository;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
 
     public ChatWebSocketHandler(
             WsConnectionRegistry registry,
             ChatEventService chatEventService,
+            SessionUserRepository sessionUserRepository,
+            UserRepository userRepository,
             @Qualifier("distributedObjectMapper") ObjectMapper objectMapper
     ) {
         this.registry = registry;
         this.chatEventService = chatEventService;
+        this.sessionUserRepository = sessionUserRepository;
+        this.userRepository = userRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -74,12 +83,13 @@ public class ChatWebSocketHandler implements WebSocketHandler {
                 case EDIT_MESSAGE -> handleEditMessage(userId, root);
                 case DELETE_MESSAGE -> handleDeleteMessage(userId, root);
             }
+            touchLastSeen(userId);
         } catch (CdlException e) {
             log.warn("CdlException: code={}, detail={}", e.code(), e.detail());
             sendError(wsConnection, e, clientEventId);
         } catch (Exception e) {
             log.error("Failed to handle message", e);
-            sendError(wsConnection, new CdlException(WebSocketExceptionCode.INVALID_MESSAGE_FORMAT), clientEventId);
+            sendError(wsConnection, new CdlException(ExceptionCode.INVALID_MESSAGE_FORMAT), clientEventId);
         }
     }
 
@@ -101,14 +111,16 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         String userId = getUserId(wsConnection);
         if (userId != null) {
             registry.removeWsConnection(userId, wsConnection);
+            touchLastSeen(userId);
             log.info("Connection removed for userId={}", userId);
         }
     }
 
     private void subscribeActiveSessions(String userId) {
         try {
-            // TODO SessionMember 프로젝션 도입 시 실제 조회로 교체. 현재는 목 데이터
-            List<String> activeSessionIds = List.of("1234");
+            List<String> activeSessionIds = sessionUserRepository.findByUserIdAndIsActiveTrue(userId).stream()
+                    .map(SessionUserEntity::getSessionId)
+                    .toList();
             activeSessionIds.forEach(sessionId -> registry.joinSession(userId, sessionId));
             log.info("Loaded {} active sessions for userId={}", activeSessionIds.size(), userId);
         } catch (Exception e) {
@@ -149,7 +161,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private String requireSessionId(JsonNode root) {
         String sessionId = root.path("sessionId").asText(null);
         if (sessionId == null || sessionId.isBlank()) {
-            throw new CdlException(WebSocketExceptionCode.SESSION_ID_REQUIRED);
+            throw new CdlException(ExceptionCode.SESSION_ID_REQUIRED);
         }
         return sessionId;
     }
@@ -157,7 +169,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private String requireClientEventId(JsonNode root) {
         String clientEventId = root.path("clientEventId").asText(null);
         if (clientEventId == null || clientEventId.isBlank()) {
-            throw new CdlException(WebSocketExceptionCode.CLIENT_EVENT_ID_REQUIRED);
+            throw new CdlException(ExceptionCode.CLIENT_EVENT_ID_REQUIRED);
         }
         return clientEventId;
     }
@@ -165,7 +177,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private String requireMessageId(JsonNode root) {
         String messageId = root.path("messageId").asText(null);
         if (messageId == null || messageId.isBlank()) {
-            throw new CdlException(WebSocketExceptionCode.MESSAGE_ID_REQUIRED);
+            throw new CdlException(ExceptionCode.MESSAGE_ID_REQUIRED);
         }
         return messageId;
     }
@@ -184,5 +196,16 @@ public class ChatWebSocketHandler implements WebSocketHandler {
         Object value = wsConnection.getAttributes().get(SessionHandshakeInterceptor.USER_ID_ATTRIBUTE);
         if (value instanceof String s) return s;
         return null;
+    }
+
+    private void touchLastSeen(String userId) {
+        try {
+            userRepository.findByUserId(userId).ifPresent(user -> {
+                user.touchLastSeen();
+                userRepository.save(user);
+            });
+        } catch (Exception e) {
+            log.warn("Failed to touch lastSeenAt for userId={}", userId, e);
+        }
     }
 }

@@ -2,27 +2,29 @@ package com.chat.domain.exception;
 
 public class CdlException extends RuntimeException {
 
-    private final String code;
-    private final String defaultMessage;
+    private final ExceptionCode code;
     private final String detail;
 
-    public CdlException(CdlExceptionCode exceptionCode) {
-        this(exceptionCode, null);
+    public CdlException(ExceptionCode code) {
+        this(code, null);
     }
 
-    public CdlException(CdlExceptionCode exceptionCode, String detail) {
-        super(detail != null ? detail : exceptionCode.defaultMessage());
-        this.code = exceptionCode.code();
-        this.defaultMessage = exceptionCode.defaultMessage();
+    public CdlException(ExceptionCode code, String detail) {
+        super(detail != null ? "[" + code + "] " + detail : "[" + code + "] " + code.defaultMessage());
+        this.code = code;
         this.detail = detail;
     }
 
-    public String code() {
+    public ExceptionCode code() {
         return code;
     }
 
+    public Integer statusCode() {
+        return code.statusCode();
+    }
+
     public String defaultMessage() {
-        return defaultMessage;
+        return code.defaultMessage();
     }
 
     public String detail() {

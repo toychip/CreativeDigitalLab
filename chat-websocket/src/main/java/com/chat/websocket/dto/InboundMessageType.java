@@ -1,7 +1,7 @@
 package com.chat.websocket.dto;
 
 import com.chat.domain.exception.CdlException;
-import com.chat.websocket.exception.WebSocketExceptionCode;
+import com.chat.domain.exception.ExceptionCode;
 
 public enum InboundMessageType {
     SEND_MESSAGE,
@@ -12,12 +12,12 @@ public enum InboundMessageType {
 
     public static InboundMessageType parseType(String typeStr) {
         if (typeStr == null) {
-            throw new CdlException(WebSocketExceptionCode.UNKNOWN_MESSAGE_TYPE);
+            throw new CdlException(ExceptionCode.UNKNOWN_MESSAGE_TYPE);
         }
         try {
             return InboundMessageType.valueOf(typeStr);
         } catch (IllegalArgumentException e) {
-            throw new CdlException(WebSocketExceptionCode.UNKNOWN_MESSAGE_TYPE, typeStr);
+            throw new CdlException(ExceptionCode.UNKNOWN_MESSAGE_TYPE, typeStr);
         }
     }
 }

@@ -33,6 +33,7 @@ public class SequenceGenerator {
         } catch (DataAccessException e) {
             log.warn("Redis INCR failed for sessionId={}, fallback to DB MAX", sessionId, e);
         }
+        // TODO Production: DB 폴백은 비원자적 — 동시 요청 시 seq 충돌(uk_events_session_seq) 가능. 분산 락 또는 DB 시퀀스로 대체 고려
         return eventRepository.findMaxSeqBySessionId(sessionId).orElse(0L) + 1;
     }
 }
