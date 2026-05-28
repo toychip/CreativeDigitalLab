@@ -1,4 +1,4 @@
 package com.chat.api.dto;
 
-public record UserCreateRequest(String username) {
+public record UserCreateRequest(String userId, String username) {
 }

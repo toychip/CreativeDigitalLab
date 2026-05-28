@@ -2,5 +2,5 @@ package com.chat.application.user;
 
 public interface UserService {
 
-    UserEntity createUser(String username);
+    UserCreateResponse createUser(String userId, String username);
 }

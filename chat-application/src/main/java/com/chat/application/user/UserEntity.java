@@ -20,11 +20,16 @@ import java.time.LocalDateTime;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class UserEntity extends BaseEntity {
 
+    // 서버 발급 PK (내부 식별자)
     @Id
-    @Column(name = "user_id", length = 36, nullable = false, updatable = false)
+    @Column(name = "id", length = 36, nullable = false, updatable = false)
+    private String id;
+
+    // 클라이언트가 지정하는 식별자 (로그인 아이디). WebSocket ?userId=, senderId 등에서 사용
+    @Column(name = "user_id", unique = true, nullable = false, length = 50, updatable = false)
     private String userId;
 
-    @Column(unique = true, nullable = false, length = 50)
+    @Column(nullable = false, length = 50)
     private String username;
 
     @Column(length = 50)
@@ -33,9 +38,10 @@ public class UserEntity extends BaseEntity {
     @Column
     private LocalDateTime lastSeenAt;
 
-    public static UserEntity create(String username) {
+    public static UserEntity create(String userId, String username) {
         return new UserEntity(
                 IdGenerator.generate(),
+                userId,
                 username,
                 null,
                 null

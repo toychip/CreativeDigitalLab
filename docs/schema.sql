@@ -136,22 +136,23 @@ COMMENT = '메시지 프로젝션';
 -- ============================================================
 -- 5) users :: 회원 (이벤트 소싱 밖, 일반 CRUD)
 -- ============================================================
--- 회원가입 = userId 발급. 인증/인가 비목표 (과제 가정).
+-- 인증/인가 비목표 (과제 가정). id 는 서버 발급 PK, user_id 는 클라가 지정하는 식별자(로그인 아이디).
 -- last_seen_at 은 presence (마지막 접속 시각) — WebSocket close / 메시지 송신 시 갱신.
 --
 -- 인덱스 설계
---   PK (user_id)
---   uk_users_username              : 동일 username 가입 차단
+--   PK (id)                         : 서버 발급 내부 식별자
+--   uk_users_user_id                : 클라 지정 userId 중복 차단 (WebSocket ?userId=, senderId 가 참조). username 은 중복 허용
 CREATE TABLE IF NOT EXISTS users (
-    user_id       CHAR(36)    NOT NULL COMMENT 'UUID v7',
-    username      VARCHAR(50) NOT NULL COMMENT '표시 이름',
+    id            CHAR(36)    NOT NULL COMMENT '서버 발급 PK (UUID v7)',
+    user_id       VARCHAR(50) NOT NULL COMMENT '클라 지정 식별자 (로그인 아이디)',
+    username      VARCHAR(50) NOT NULL COMMENT '표시 이름 (중복 허용)',
     status        VARCHAR(50) NULL     COMMENT '확장용 (현재 미사용)',
     last_seen_at  DATETIME(6) NULL     COMMENT 'presence: 마지막 접속 시각',
     created_at    DATETIME(6) NOT NULL COMMENT 'row 생성 시각 (BaseEntity / JPA Auditing)',
     updated_at    DATETIME(6) NOT NULL COMMENT 'row 갱신 시각 (BaseEntity / JPA Auditing)',
 
-    PRIMARY KEY (user_id),
-    UNIQUE KEY uk_users_username (username)
+    PRIMARY KEY (id),
+    UNIQUE KEY uk_users_user_id (user_id)
 )
 ENGINE = InnoDB
 DEFAULT CHARSET = utf8mb4

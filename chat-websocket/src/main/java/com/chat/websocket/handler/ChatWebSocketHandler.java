@@ -8,7 +8,7 @@ import com.chat.application.user.UserRepository;
 import com.chat.domain.exception.CdlException;
 import com.chat.websocket.dto.ErrorMessage;
 import com.chat.websocket.dto.InboundMessageType;
-import com.chat.websocket.exception.WebSocketExceptionCode;
+import com.chat.domain.exception.ExceptionCode;
 import com.chat.websocket.registry.WsConnectionRegistry;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -89,7 +89,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
             sendError(wsConnection, e, clientEventId);
         } catch (Exception e) {
             log.error("Failed to handle message", e);
-            sendError(wsConnection, new CdlException(WebSocketExceptionCode.INVALID_MESSAGE_FORMAT), clientEventId);
+            sendError(wsConnection, new CdlException(ExceptionCode.INVALID_MESSAGE_FORMAT), clientEventId);
         }
     }
 
@@ -161,7 +161,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private String requireSessionId(JsonNode root) {
         String sessionId = root.path("sessionId").asText(null);
         if (sessionId == null || sessionId.isBlank()) {
-            throw new CdlException(WebSocketExceptionCode.SESSION_ID_REQUIRED);
+            throw new CdlException(ExceptionCode.SESSION_ID_REQUIRED);
         }
         return sessionId;
     }
@@ -169,7 +169,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private String requireClientEventId(JsonNode root) {
         String clientEventId = root.path("clientEventId").asText(null);
         if (clientEventId == null || clientEventId.isBlank()) {
-            throw new CdlException(WebSocketExceptionCode.CLIENT_EVENT_ID_REQUIRED);
+            throw new CdlException(ExceptionCode.CLIENT_EVENT_ID_REQUIRED);
         }
         return clientEventId;
     }
@@ -177,7 +177,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
     private String requireMessageId(JsonNode root) {
         String messageId = root.path("messageId").asText(null);
         if (messageId == null || messageId.isBlank()) {
-            throw new CdlException(WebSocketExceptionCode.MESSAGE_ID_REQUIRED);
+            throw new CdlException(ExceptionCode.MESSAGE_ID_REQUIRED);
         }
         return messageId;
     }
@@ -200,7 +200,7 @@ public class ChatWebSocketHandler implements WebSocketHandler {
 
     private void touchLastSeen(String userId) {
         try {
-            userRepository.findById(userId).ifPresent(user -> {
+            userRepository.findByUserId(userId).ifPresent(user -> {
                 user.touchLastSeen();
                 userRepository.save(user);
             });

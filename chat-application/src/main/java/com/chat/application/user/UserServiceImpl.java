@@ -1,6 +1,8 @@
 package com.chat.application.user;
 
 import com.chat.domain.common.IdGenerator;
+import com.chat.domain.exception.CdlException;
+import com.chat.domain.exception.ExceptionCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,8 +15,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserEntity createUser(String username) {
-        UserEntity user = UserEntity.create(username);
-        return userRepository.save(user);
+    public UserCreateResponse createUser(String userId, String username) {
+        if (userRepository.existsByUserId(userId)) {
+            throw new CdlException(ExceptionCode.USER_ID_ALREADY_TAKEN);
+        }
+        UserEntity user = userRepository.save(UserEntity.create(userId, username));
+        return UserCreateResponse.from(user);
     }
 }
