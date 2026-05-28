@@ -17,7 +17,7 @@ import java.time.Instant;
 @Table(
         name = "events",
         uniqueConstraints = {
-                @UniqueConstraint(name = "uk_events_session_client", columnNames = {"session_id", "client_event_id"}),
+                @UniqueConstraint(name = "uk_events_session_client", columnNames = {"session_id", "client_event_id", "event_type"}),
                 @UniqueConstraint(name = "uk_events_session_seq", columnNames = {"session_id", "seq"})
         },
         indexes = {

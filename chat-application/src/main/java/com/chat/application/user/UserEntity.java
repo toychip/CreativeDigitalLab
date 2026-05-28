@@ -1,6 +1,7 @@
 package com.chat.application.user;
 
 import com.chat.application.common.BaseEntity;
+import com.chat.domain.common.IdGenerator;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -32,9 +33,9 @@ public class UserEntity extends BaseEntity {
     @Column
     private LocalDateTime lastSeenAt;
 
-    public static UserEntity create(String userId, String username) {
+    public static UserEntity create(String username) {
         return new UserEntity(
-                userId,
+                IdGenerator.generate(),
                 username,
                 null,
                 null

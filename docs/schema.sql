@@ -19,7 +19,7 @@
 --
 -- 인덱스 설계
 --   PK (event_id)                       : 단일 이벤트 조회
---   uk_events_session_client            : (멱등성) 동일 클라 재전송 INSERT 차단
+--   uk_events_session_client            : (멱등성) 동일 클라 재전송 INSERT 차단. event_type 포함 — 한 명령이 같은 clientEventId 로 여러 type(LIFECYCLE+USER) 발행 가능
 --   uk_events_session_seq               : (순서) 동일 (session, seq) 충돌 차단 + 정렬/catch-up
 --   idx_events_session_created          : (시점 복원) WHERE session_id=? AND created_at <=?
 CREATE TABLE IF NOT EXISTS events (
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS events (
     created_at      DATETIME(6) NOT NULL COMMENT '서버 수신 시각',
 
     PRIMARY KEY (event_id),
-    UNIQUE KEY uk_events_session_client (session_id, client_event_id),
+    UNIQUE KEY uk_events_session_client (session_id, client_event_id, event_type),
     UNIQUE KEY uk_events_session_seq    (session_id, seq),
     KEY        idx_events_session_created (session_id, created_at)
 )
