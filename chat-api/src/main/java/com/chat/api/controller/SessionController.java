@@ -46,18 +46,10 @@ public class SessionController {
     private final SessionRepository sessionRepository;
     private final EventRepository eventRepository;
 
-    /** 세션 생성: LifecycleEvent(ACTIVE) + UserEvent(JOINED) 발행 */
     @PostMapping
     public SessionCreateResponse createSession(@RequestBody SessionCreateRequest request) {
         String sessionId = IdGenerator.generate();
-
-        chatEventService.appendLifecycle(
-                new LifecycleCommand(sessionId, request.clientEventId() + "-lifecycle", SessionStatus.ACTIVE));
-
-        chatEventService.appendUser(
-                new UserCommand(sessionId, request.clientEventId() + "-user",
-                        request.creatorUserId(), UserEvent.Type.JOINED));
-
+        chatEventService.createSession(sessionId, request.clientEventId(), request.creatorUserId());
         return new SessionCreateResponse(sessionId);
     }
 
