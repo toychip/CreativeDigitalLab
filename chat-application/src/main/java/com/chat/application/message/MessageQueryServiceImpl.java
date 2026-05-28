@@ -20,7 +20,7 @@ public class MessageQueryServiceImpl implements MessageQueryService {
     @Override
     @Transactional(readOnly = true)
     public MessagePageResponse getMessagesByCursor(String sessionId, Long cursor, int limit, MessageDirection direction) {
-        int capped = Math.min(limit, MAX_LIMIT);
+        int capped = Math.max(1, Math.min(limit, MAX_LIMIT));
         Limit pageLimit = Limit.of(capped);
 
         List<MessageEntity> messages = fetch(sessionId, cursor, direction, pageLimit);

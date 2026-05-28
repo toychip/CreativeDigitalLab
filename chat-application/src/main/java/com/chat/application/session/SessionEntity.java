@@ -53,6 +53,10 @@ public class SessionEntity extends BaseEntity {
     }
 
     public void changeStatus(SessionStatus status) {
+        // ENDED 는 terminal — 순서 역전/중복 이벤트로도 되살아나지 않음
+        if (this.status == SessionStatus.ENDED) {
+            return;
+        }
         this.status = status;
         if (status == SessionStatus.ENDED && this.endedAt == null) {
             this.endedAt = LocalDateTime.now();

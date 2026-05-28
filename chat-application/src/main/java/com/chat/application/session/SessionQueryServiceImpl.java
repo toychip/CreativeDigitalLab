@@ -40,7 +40,7 @@ public class SessionQueryServiceImpl implements SessionQueryService {
     @Override
     @Transactional(readOnly = true)
     public SessionPageResponse getSessions(SessionStatus status, LocalDateTime from, LocalDateTime to, String cursor, int limit) {
-        int capped = Math.min(limit, MAX_LIMIT);
+        int capped = Math.max(1, Math.min(limit, MAX_LIMIT));
         List<SessionEntity> sessions = sessionRepository.findWithCursor(status, from, to, cursor, Limit.of(capped));
         return SessionPageResponse.of(sessions, capped);
     }

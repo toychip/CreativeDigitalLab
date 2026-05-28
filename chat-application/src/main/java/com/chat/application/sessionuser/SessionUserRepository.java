@@ -32,7 +32,7 @@ public interface SessionUserRepository extends JpaRepository<SessionUserEntity, 
     @Query("""
             UPDATE SessionUserEntity su
             SET su.isActive = false, su.leftAt = CURRENT_TIMESTAMP
-            WHERE su.sessionId = :sessionId AND su.userId = :userId
+            WHERE su.sessionId = :sessionId AND su.userId = :userId AND su.isActive = true
             """)
     void leaveSession(String sessionId, String userId);
 }

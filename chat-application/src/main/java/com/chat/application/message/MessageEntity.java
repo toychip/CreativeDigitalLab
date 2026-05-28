@@ -58,6 +58,10 @@ public class MessageEntity extends BaseEntity {
     }
 
     public void edit(String content) {
+        // DELETED 는 terminal — 순서 역전으로 DELETE 뒤 EDIT 가 와도 부활 금지
+        if (this.status == MessageStatus.DELETED) {
+            return;
+        }
         this.content = content;
         this.status = MessageStatus.EDITED;
     }
